@@ -7,8 +7,8 @@ this, a fresh database has nothing that would ever trigger a debate, and
 "run scan" would truthfully report zero bottlenecks forever. This exists
 specifically so a first run has something real to look at.
 
-Usage:
-    DATABASE_URL=postgresql://... python scripts/bootstrap_demo.py
+Usage (from the backend/ directory, with a populated .env):
+    python scripts/bootstrap_demo.py
 """
 import asyncio
 import os
@@ -17,6 +17,10 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+from dotenv import load_dotenv
+load_dotenv()  # same .env the main app reads via pydantic-settings --
+                # no manual shell export needed on any platform
+
 from app.db.session import create_pool
 from app.onboarding.seed import load_spec, Onboarder
 
@@ -24,8 +28,9 @@ from app.onboarding.seed import load_spec, Onboarder
 async def main():
     database_url = os.environ.get("DATABASE_URL")
     if not database_url:
-        print("Set DATABASE_URL first, e.g.:")
-        print("  export DATABASE_URL=postgresql://postgres:pass@localhost/workflow_db")
+        print("DATABASE_URL not found. Either:")
+        print("  - set it in backend/.env, or")
+        print("  - export it in your shell first")
         sys.exit(1)
 
     pool = await create_pool(database_url)

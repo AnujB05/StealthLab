@@ -140,6 +140,7 @@ class DebateResult(BaseModel):
     termination_reason: Literal["converged", "round_cap", "no_candidates"]
     turns: list[DebateTurn] = Field(default_factory=list)
     candidates: list[Candidate] = Field(default_factory=list)
+    agent_failures: list[str] = Field(default_factory=list)
 
     def eligible_candidates(self, min_supporters: int) -> list[Candidate]:
         """Section 7: candidates with support from >= N panelists go to eval."""

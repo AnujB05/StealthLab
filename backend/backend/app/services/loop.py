@@ -126,9 +126,10 @@ class LoopOrchestrator:
         await self._persist_debate(result)
 
         if result.termination_reason == "no_candidates":
-            await self._machine.transition(
-                debate_id, "REJECTED", reason="panel produced no candidates"
-            )
+            reason = "panel produced no candidates"
+            if result.agent_failures:
+                reason += "; " + "; ".join(result.agent_failures)
+            await self._machine.transition(debate_id, "REJECTED", reason=reason)
             return []
 
         await self._machine.transition(

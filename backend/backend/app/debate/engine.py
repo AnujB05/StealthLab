@@ -96,6 +96,7 @@ class DebateEngine:
         turns: list[DebateTurn] = []
         candidates: list[Candidate] = []
         by_id: dict[UUID, Candidate] = {}
+        agent_failures: list[str] = []
         rounds_used = 0
         termination = "round_cap"
 
@@ -117,6 +118,7 @@ class DebateEngine:
                 if isinstance(reply, Exception):
                     log.warning("agent %s failed in round %d: %s",
                                 agent.agent_id, round_number, reply)
+                    agent_failures.append(f"{agent.agent_id} (round {round_number}): {reply}")
                     continue
 
                 try:
@@ -205,6 +207,7 @@ class DebateEngine:
             termination_reason=termination,  # type: ignore[arg-type]
             turns=turns,
             candidates=candidates,
+            agent_failures=agent_failures,
         )
 
 

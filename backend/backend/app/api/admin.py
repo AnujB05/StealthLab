@@ -41,10 +41,19 @@ async def get_pool(request: Request):
     return request.app.state.pool
 
 
+class DebateOutcome(BaseModel):
+    debate_id: UUID
+    state: str
+    termination_reason: Optional[str]
+    candidates_proposed: int
+    candidates_passed_layer1: int
+    detail: Optional[str] = None
+
+
 class ScanResponse(BaseModel):
     triggers_found: int
     debates_run: int
-    debate_ids: list[UUID] = []
+    outcomes: list[DebateOutcome] = []
     errors: list[str] = []
 
 
@@ -71,21 +80,45 @@ async def run_scan(
             500, f"could not construct debate panel (check API keys in .env): {exc}"
         ) from exc
 
-    debate_ids: list[UUID] = []
+    outcomes: list[DebateOutcome] = []
     errors: list[str] = []
     for trigger_id in recorded:
         try:
             await orchestrator.run(trigger_id)
             row = await pool.fetchrow(
-                "SELECT debate_id FROM triggers WHERE id = $1", trigger_id
+                "SELECT d.id, d.state::text AS state, d.termination_reason "
+                "FROM debates d JOIN triggers t ON t.debate_id = d.id "
+                "WHERE t.id = $1", trigger_id,
             )
-            if row and row["debate_id"]:
-                debate_ids.append(row["debate_id"])
+            if row:
+                candidate_count = await pool.fetchval(
+                    "SELECT COUNT(*) FROM candidates WHERE debate_id = $1", row["id"]
+                )
+                passed_count = await pool.fetchval(
+                    "SELECT COUNT(*) FROM scorecards WHERE debate_id = $1 AND layer1_passed",
+                    row["id"],
+                )
+                # The actual reason a debate closed -- including real agent
+                # failure detail, not just "no candidates" -- lives in the
+                # event log, not the debates row itself.
+                detail_row = await pool.fetchrow(
+                    "SELECT reason FROM debate_events WHERE debate_id = $1 "
+                    "AND to_state IN ('REJECTED', 'PENDING_APPROVAL') "
+                    "ORDER BY occurred_at DESC LIMIT 1",
+                    row["id"],
+                )
+                outcomes.append(DebateOutcome(
+                    debate_id=row["id"], state=row["state"],
+                    termination_reason=row["termination_reason"],
+                    candidates_proposed=candidate_count or 0,
+                    candidates_passed_layer1=passed_count or 0,
+                    detail=detail_row["reason"] if detail_row else None,
+                ))
         except Exception as exc:  # noqa: BLE001
             log.error("debate failed for trigger %s: %s", trigger_id, exc)
             errors.append(f"trigger {trigger_id}: {exc}")
 
     return ScanResponse(
-        triggers_found=len(recorded), debates_run=len(debate_ids),
-        debate_ids=debate_ids, errors=errors,
+        triggers_found=len(recorded), debates_run=len(outcomes),
+        outcomes=outcomes, errors=errors,
     )

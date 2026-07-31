@@ -28,12 +28,23 @@ export default function ApprovalsDocket() {
     setScanMessage(null);
     try {
       const result = await api.runScan();
-      setScanMessage(
-        result.triggers_found === 0
-          ? "No bottlenecks crossed the current thresholds."
-          : `${result.triggers_found} trigger(s) found, ${result.debates_run} debate(s) completed.` +
-              (result.errors.length ? ` ${result.errors.length} error(s) — check the API logs.` : ""),
-      );
+      if (result.triggers_found === 0) {
+        setScanMessage("No bottlenecks crossed the current thresholds.");
+      } else {
+        const failed = result.outcomes.filter((o) => o.candidates_proposed === 0);
+        if (failed.length > 0 && failed[0].detail) {
+          // Something real happened, but no candidate survived to review —
+          // show why rather than a generic "completed" that would hide a
+          // billing/auth failure behind a falsely reassuring message.
+          setScanMessage(`Debate ran but produced nothing to review: ${failed[0].detail}`);
+        } else {
+          const passed = result.outcomes.reduce((n, o) => n + o.candidates_passed_layer1, 0);
+          setScanMessage(
+            `${result.triggers_found} trigger(s) found, ${result.debates_run} debate(s) run, ` +
+              `${passed} candidate(s) ready for review.`,
+          );
+        }
+      }
       await load();
     } catch (e) {
       setScanMessage(

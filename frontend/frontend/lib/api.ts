@@ -58,10 +58,19 @@ export type ApprovalResponse = {
   export_markdown: string | null;
 };
 
+export type DebateOutcome = {
+  debate_id: string;
+  state: string;
+  termination_reason: string | null;
+  candidates_proposed: number;
+  candidates_passed_layer1: number;
+  detail: string | null;
+};
+
 export type ScanResponse = {
   triggers_found: number;
   debates_run: number;
-  debate_ids: string[];
+  outcomes: DebateOutcome[];
   errors: string[];
 };
 
