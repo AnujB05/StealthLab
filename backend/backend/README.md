@@ -105,6 +105,27 @@ writers against `DebateStateMachine`'s row lock.
 - A change set that fails to apply rolls back and leaves the debate in
   `PENDING_APPROVAL` rather than recording an approval that didn't happen.
 
+## Deployment
+
+Railway or Render, per the plan's Section 12. Both platforms need one
+setting the monorepo layout makes non-default: point them at the
+`backend/` subdirectory, not the repo root.
+
+- **Railway:** New service → Deploy from GitHub repo → in the service's
+  Settings, set **Root Directory** to `backend`. It picks up the
+  `Procfile` automatically. Add the environment variables from
+  `.env.example` under Variables.
+- **Render:** New Web Service → connect the repo → set **Root Directory**
+  to `backend` in the create form. Build command
+  `pip install -r requirements.txt`, start command
+  `uvicorn app.main:app --host 0.0.0.0 --port $PORT` (same as the
+  `Procfile`, Render just wants it typed into the form directly).
+
+Either way, set `DATABASE_URL` to a real hosted Postgres with pgvector
+enabled (Supabase's is the easiest to get pgvector on without extra
+setup) and `FRONTEND_ORIGIN` to wherever the frontend ends up deployed —
+CORS will reject the frontend's requests until that matches exactly.
+
 ## Deliberately absent (Phase A scope)
 
 Layer 2 empirical eval, Jalpa adversarial escalation, Prover-Estimator,

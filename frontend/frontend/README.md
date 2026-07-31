@@ -78,10 +78,14 @@ silently.
 
 Vercel is the natural fit — this is what the project's stack was chosen
 around (`next/font/google` needing real network access is itself a sign
-this wants a real hosting environment, not a sandbox). `vercel deploy`,
-set `NEXT_PUBLIC_API_BASE_URL` to the deployed backend's URL in Vercel's
-environment settings, and set `FRONTEND_ORIGIN` in the backend to the
-resulting `*.vercel.app` URL so CORS allows it.
+this wants a real hosting environment, not a sandbox). Since this lives
+in a monorepo alongside `backend/`, one non-default setting is needed:
+when importing the project, set **Root Directory** to `frontend` in
+Vercel's project configuration screen — without it, Vercel tries to
+build the repo root, finds no `package.json` there, and fails. Then set
+`NEXT_PUBLIC_API_BASE_URL` to the deployed backend's URL in Vercel's
+environment variable settings, and set `FRONTEND_ORIGIN` in the backend
+to the resulting `*.vercel.app` URL so CORS allows it.
 
 ## What's deliberately not here yet
 
