@@ -1,0 +1,74 @@
+{
+  "_comment": "FORMAT DEMONSTRATION ONLY. This is not seeded content and must not be loaded into a customer's instance graph. Per Section 4, generic content is never merged as asserted fact -- this file exists so the onboarding procedure can be exercised end to end before a real workflow is confirmed. Anything real gets its own spec, written from that company's own documents.",
+
+  "workflow_name": "example_generic_pipeline",
+
+  "knowledge": [
+    {
+      "key": "owner_ops",
+      "node_type": "person",
+      "name": "Operations Owner",
+      "properties": {"role": "approver"}
+    },
+    {
+      "key": "policy_retention",
+      "node_type": "policy",
+      "name": "Data Retention Policy",
+      "properties": {"scope": "all ingested artifacts"}
+    }
+  ],
+
+  "tasks": [
+    {
+      "key": "intake",
+      "name": "Intake artifact",
+      "description": "Receive an incoming artifact and register it.",
+      "io_schema": {
+        "type": "object",
+        "properties": {"source_uri": {"type": "string"}},
+        "required": ["source_uri"]
+      },
+      "skill_ref": "tool:intake",
+      "success_criteria": {"registered": true},
+      "pert_optimistic_ms": 800,
+      "pert_likely_ms": 1500,
+      "pert_pessimistic_ms": 6000
+    },
+    {
+      "key": "extract",
+      "name": "Extract structured fields",
+      "description": "Pull structured fields out of the registered artifact.",
+      "io_schema": {
+        "type": "object",
+        "properties": {"artifact_id": {"type": "string"}},
+        "required": ["artifact_id"]
+      },
+      "skill_ref": "agent:extractor",
+      "success_criteria": {"required_fields_present": true},
+      "cost_estimate": 0.02,
+      "latency_estimate_ms": 4000,
+      "pert_optimistic_ms": 2000,
+      "pert_likely_ms": 4000,
+      "pert_pessimistic_ms": 15000
+    },
+    {
+      "key": "review",
+      "name": "Human review",
+      "description": "A person checks the extraction before it is published.",
+      "io_schema": {
+        "type": "object",
+        "properties": {"extraction_id": {"type": "string"}},
+        "required": ["extraction_id"]
+      },
+      "skill_ref": "human:review",
+      "success_criteria": {"approved": true}
+    }
+  ],
+
+  "edges": [
+    {"edge_type": "PRODUCES", "source": "intake", "target": "extract"},
+    {"edge_type": "PRODUCES", "source": "extract", "target": "review"},
+    {"edge_type": "REQUIRES", "source": "extract", "target": "policy_retention"},
+    {"edge_type": "RESPONSIBLE_FOR", "source": "owner_ops", "target": "review"}
+  ]
+}

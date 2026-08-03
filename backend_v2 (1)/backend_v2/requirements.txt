@@ -1,0 +1,24 @@
+fastapi>=0.115
+uvicorn[standard]>=0.32
+asyncpg>=0.30
+pydantic>=2.9
+pydantic-settings>=2.6
+python-dotenv>=1.0
+
+# Panel agents (Section 7). openai covers both OpenAI and Fireworks/Kimi K3,
+# which is OpenAI-compatible and differs only in base_url.
+anthropic>=0.40
+openai>=1.55
+
+# Embeddings (not yet wired -- retrieval currently uses graph traversal only)
+voyageai>=0.3  # embeddings (V1 item #3) -- now actually used
+
+# Layer 2 statistics -- validated against scipy's own t-test in tests
+scipy>=1.11
+
+# Optional: YAML workflow specs for onboarding
+PyYAML>=6.0
+
+# Dev
+pytest>=8.0
+pytest-asyncio>=0.24
